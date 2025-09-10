@@ -1,8 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList; // NUEVO
-import java.util.List;     // NUEVO
+import java.util.ArrayList;
+import java.util.List;
 
 public class servidor2025 {
     private static final String ARCHIVO_USUARIOS = "archivo.txt";
@@ -46,16 +46,50 @@ public class servidor2025 {
                 if (validarLogin(usuario, contrasena)) {
                     escritor.println("✅ Bienvenido, " + usuario + "!");
 
-                    // NUEVO: Menú para mostrar usuarios
-                    escritor.println("MENU_USUARIOS"); // señal al cliente
+                    // Enviar menú
+                    escritor.println("MENU_OPCIONES");
 
-                    String accion = lectorSocket.readLine(); // espera opción del cliente
-                    if ("1".equals(accion)) {
-                        List<String> usuarios = obtenerUsuarios();
-                        for (String u : usuarios) {
-                            escritor.println(u);
-                        }
-                        escritor.println("FIN_LISTA"); // final de la lista
+                    String accion = lectorSocket.readLine();
+                    switch (accion) {
+                        case "1":
+                            // Mostrar usuarios
+                            List<String> usuarios = obtenerUsuarios();
+                            for (String u : usuarios) {
+                                escritor.println(u);
+                            }
+                            escritor.println("FIN_LISTA");
+                            break;
+                        case "2":
+                            // Jugar: Adivinar número
+                            int numero = (int) (Math.random() * 10) + 1;
+                            int intentos = 0;
+                            escritor.println("🎮 Adivina el número del 1 al 10. Tienes 3 intentos.");
+
+                            while (intentos < 3) {
+                                String intentoStr = lectorSocket.readLine();
+                                try {
+                                    int intento = Integer.parseInt(intentoStr);
+                                    if (intento == numero) {
+                                        escritor.println("🎉 ¡Correcto! Adivinaste el número.");
+                                        break;
+                                    } else if (intento < numero) {
+                                        escritor.println("📉 El número es mayor.");
+                                    } else {
+                                        escritor.println("📈 El número es menor.");
+                                    }
+                                    intentos++;
+                                } catch (NumberFormatException e) {
+                                    escritor.println("❗ Ingresa un número válido.");
+                                }
+                            }
+
+                            if (intentos >= 3) {
+                                escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                            }
+
+                            break;
+                        default:
+                            escritor.println("❌ Opción no válida.");
                     }
 
                 } else {
@@ -117,7 +151,6 @@ public class servidor2025 {
         return false;
     }
 
-    // NUEVO: Obtener usuarios
     public static List<String> obtenerUsuarios() {
         List<String> usuarios = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_USUARIOS))) {
@@ -134,4 +167,5 @@ public class servidor2025 {
         return usuarios;
     }
 }
+
 
