@@ -8,103 +8,79 @@ public class servidor2025 {
     private static final String ARCHIVO_USUARIOS = "archivo.txt";
 
     public static void main(String[] args) throws IOException {
-        ServerSocket socketespecial = null;
+        ServerSocket socketespecial = new ServerSocket(8080);
+        Socket cliente = socketespecial.accept();
 
-        try {
-            socketespecial = new ServerSocket(8080);
-        } catch (IOException e) {
-            System.out.println("Hubo problemas en la red");
-            System.exit(1);
-        }
+        PrintWriter escritor = new PrintWriter(cliente.getOutputStream(), true);
+        BufferedReader lectorSocket = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
 
-        Socket cliente = null;
-        try {
-            cliente = socketespecial.accept();
-        } catch (IOException e) {
-            System.out.println("Hubo problemas en la conexión");
-            System.exit(1);
-        }
+        String opcion = lectorSocket.readLine();
 
-        PrintWriter escritor = null;
-        try {
-            escritor = new PrintWriter(cliente.getOutputStream(), true);
-            BufferedReader lectorSocket = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
+        if ("1".equals(opcion)) {
+            String usuario = lectorSocket.readLine();
+            String contrasena = lectorSocket.readLine();
+            if (registrarUsuario(usuario, contrasena)) {
+                escritor.println("Usuario registrado con éxito.");
+            } else {
+                escritor.println("El usuario ya existe.");
+            }
+        } else if ("2".equals(opcion)) {
+            String usuario = lectorSocket.readLine();
+            String contrasena = lectorSocket.readLine();
+            if (validarLogin(usuario, contrasena)) {
+                escritor.println("✅ Bienvenido, " + usuario + "!");
+                escritor.println("MENU_OPCIONES");
 
-            String opcion = lectorSocket.readLine();
+                String accion = lectorSocket.readLine();
+                switch (accion) {
+                    case "1":
+                        List<String> usuarios = obtenerUsuarios();
+                        for (String u : usuarios) {
+                            escritor.println(u);
+                        }
+                        escritor.println("FIN_LISTA");
+                        break;
+                    case "2":
+                        int numero = (int) (Math.random() * 10) + 1;
+                        int intentos = 0;
+                        escritor.println("Adivina el número del 1 al 10. Tienes 3 intentos.");
 
-            if ("1".equals(opcion)) {
-                String usuario = lectorSocket.readLine();
-                String contrasena = lectorSocket.readLine();
-                if (registrarUsuario(usuario, contrasena)) {
-                    escritor.println("✅ Usuario registrado con éxito.");
-                } else {
-                    escritor.println("❌ El usuario ya existe.");
-                }
-            } else if ("2".equals(opcion)) {
-                String usuario = lectorSocket.readLine();
-                String contrasena = lectorSocket.readLine();
-                if (validarLogin(usuario, contrasena)) {
-                    escritor.println("✅ Bienvenido, " + usuario + "!");
-
-                    // Enviar menú
-                    escritor.println("MENU_OPCIONES");
-
-                    String accion = lectorSocket.readLine();
-                    switch (accion) {
-                        case "1":
-                            // Mostrar usuarios
-                            List<String> usuarios = obtenerUsuarios();
-                            for (String u : usuarios) {
-                                escritor.println(u);
-                            }
-                            escritor.println("FIN_LISTA");
-                            break;
-                        case "2":
-                            // Jugar: Adivinar número
-                            int numero = (int) (Math.random() * 10) + 1;
-                            int intentos = 0;
-                            escritor.println("🎮 Adivina el número del 1 al 10. Tienes 3 intentos.");
-
-                            while (intentos < 3) {
-                                String intentoStr = lectorSocket.readLine();
-                                try {
-                                    int intento = Integer.parseInt(intentoStr);
-                                    if (intento == numero) {
-                                        escritor.println("🎉 ¡Correcto! Adivinaste el número.");
-                                        break;
-                                    } else if (intento < numero) {
-                                        escritor.println("📉 El número es mayor.");
-                                    } else {
-                                        escritor.println("📈 El número es menor.");
-                                    }
-                                    intentos++;
-                                } catch (NumberFormatException e) {
-                                    escritor.println("❗ Ingresa un número válido.");
+                        while (intentos < 3) {
+                            String intentoStr = lectorSocket.readLine();
+                            try {
+                                int intento = Integer.parseInt(intentoStr);
+                                if (intento == numero) {
+                                    escritor.println(" Adivinaste el número.");
+                                    escritor.println("FIN_JUEGO");
+                                    break;
+                                } else if (intento < numero) {
+                                    escritor.println("El número es mayor.");
+                                } else {
+                                    escritor.println("El número es menor.");
                                 }
+                                intentos++;
+                            } catch (NumberFormatException e) {
+                                escritor.println("Ingresa un número válido.");
                             }
+                        }
 
-                            if (intentos >= 3) {
-                                escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
-                            }
-
-                            break;
-                        default:
-                            escritor.println("❌ Opción no válida.");
-                    }
-
-                } else {
-                    escritor.println("❌ Usuario o contraseña incorrectos.");
+                        if (intentos >= 3) {
+                            escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                            escritor.println("FIN_JUEGO");
+                        }
+                        break;
+                    default:
+                        escritor.println("Opción no válida.");
                 }
             } else {
-                escritor.println("❌ Opción no válida.");
+                escritor.println("Usuario o contraseña incorrectos.");
             }
-
-            cliente.close();
-            socketespecial.close();
-        } catch (Exception e) {
-            System.out.println("Hubo problemas con los sockets");
-            System.exit(2);
+        } else {
+            escritor.println("Opción no válida.");
         }
+
+        cliente.close();
+        socketespecial.close();
     }
 
     public static boolean registrarUsuario(String usuario, String contrasena) {
@@ -116,7 +92,6 @@ public class servidor2025 {
             pw.println(usuario + ";" + contrasena);
             return true;
         } catch (IOException e) {
-            System.out.println("Error al guardar usuario.");
             return false;
         }
     }
@@ -131,7 +106,6 @@ public class servidor2025 {
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error al leer archivo.");
         }
         return false;
     }
@@ -146,7 +120,6 @@ public class servidor2025 {
                 }
             }
         } catch (IOException e) {
-            // archivo no existe
         }
         return false;
     }
@@ -162,10 +135,10 @@ public class servidor2025 {
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error al leer usuarios.");
         }
         return usuarios;
     }
 }
+
 
 
