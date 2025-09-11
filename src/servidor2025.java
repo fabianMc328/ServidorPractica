@@ -6,6 +6,7 @@ import java.util.List;
 
 public class servidor2025 {
     private static final String ARCHIVO_USUARIOS = "archivo.txt";
+    private static final String ARCHIVO_MENSAJES = "mensajes.txt";
 
     public static void main(String[] args) throws IOException {
         ServerSocket socketespecial = new ServerSocket(8080);
@@ -29,6 +30,22 @@ public class servidor2025 {
             String contrasena = lectorSocket.readLine();
             if (validarLogin(usuario, contrasena)) {
                 escritor.println("✅ Bienvenido, " + usuario + "!");
+
+                List<String> mensajesPendientes = obtenerMensajes(usuario);
+                if (!mensajesPendientes.isEmpty()) {
+                    escritor.println("=== Tienes mensajes recibidos ===");
+                    for (String m : mensajesPendientes) {
+                        escritor.println(m);
+                    }
+                    escritor.println("=== Fin de mensajes ===");
+                }
+
+
+                escritor.println("=== MENÚ PRINCIPAL ===");
+                escritor.println("1. Ver lista de usuarios");
+                escritor.println("2. Jugar adivina el número");
+                escritor.println("3. Enviar mensaje a un usuario");
+                escritor.println("Escribe una opción y presiona Enter:");
                 escritor.println("MENU_OPCIONES");
 
                 String accion = lectorSocket.readLine();
@@ -40,6 +57,7 @@ public class servidor2025 {
                         }
                         escritor.println("FIN_LISTA");
                         break;
+
                     case "2":
                         int numero = (int) (Math.random() * 10) + 1;
                         int intentos = 0;
@@ -50,7 +68,7 @@ public class servidor2025 {
                             try {
                                 int intento = Integer.parseInt(intentoStr);
                                 if (intento == numero) {
-                                    escritor.println(" Adivinaste el número.");
+                                    escritor.println("🎉 Adivinaste el número.");
                                     escritor.println("FIN_JUEGO");
                                     break;
                                 } else if (intento < numero) {
@@ -69,6 +87,16 @@ public class servidor2025 {
                             escritor.println("FIN_JUEGO");
                         }
                         break;
+
+                    case "3":
+                        escritor.println("Usuario destinatario:");
+                        String destinatario = lectorSocket.readLine();
+                        escritor.println("Escribe tu mensaje:");
+                        String mensaje = lectorSocket.readLine();
+                        guardarMensaje(usuario, destinatario, mensaje);
+                        escritor.println("Mensaje guardado para " + destinatario);
+                        break;
+
                     default:
                         escritor.println("Opción no válida.");
                 }
@@ -138,7 +166,32 @@ public class servidor2025 {
         }
         return usuarios;
     }
+
+    public static List<String> obtenerMensajes(String usuario) {
+        List<String> mensajes = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_MENSAJES))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] datos = linea.split(";");
+                if (datos.length == 3 && datos[1].equals(usuario)) {
+                    mensajes.add("De " + datos[0] + ": " + datos[2]);
+                }
+            }
+        } catch (IOException e) {
+
+        }
+        return mensajes;
+    }
+
+    public static void guardarMensaje(String remitente, String destinatario, String mensaje) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_MENSAJES, true))) {
+            pw.println(remitente + ";" + destinatario + ";" + mensaje);
+        } catch (IOException e) {
+            System.out.println("Error al guardar mensaje: " + e.getMessage());
+        }
+    }
 }
+
 
 
 
