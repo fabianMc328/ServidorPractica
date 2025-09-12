@@ -44,7 +44,7 @@ public class servidor2025 {
                     escritor.println("MENU_OPCIONES");
 
                     String accion;
-                    while ((accion = lectorSocket.readLine()) != null) { // NUEVO - bucle seguro
+                    while ((accion = lectorSocket.readLine()) != null) {
                         switch (accion) {
                             case "1":
                                 List<String> usuarios = obtenerUsuarios();
@@ -63,23 +63,32 @@ public class servidor2025 {
                                     try {
                                         int intento = Integer.parseInt(intentoStr);
                                         if (intento == numero) {
-                                            escritor.println(" Adivinaste el número.");
+                                            escritor.println("🎉 Adivinaste el número.");
                                             escritor.println("FIN_JUEGO");
                                             break;
-                                        } else if (intento < numero) {
-                                            escritor.println("El número es mayor.");
                                         } else {
-                                            escritor.println("El número es menor.");
+                                            intentos++;
+                                            if (intentos >= 3) {
+                                                escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                                                escritor.println("FIN_JUEGO");
+                                                break;
+                                            } else {
+                                                if (intento < numero) {
+                                                    escritor.println("El número es mayor.");
+                                                } else {
+                                                    escritor.println("El número es menor.");
+                                                }
+                                            }
                                         }
-                                        intentos++;
                                     } catch (NumberFormatException e) {
+                                        intentos++;
                                         escritor.println("Ingresa un número válido.");
+                                        if (intentos >= 3) {
+                                            escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                                            escritor.println("FIN_JUEGO");
+                                            break;
+                                        }
                                     }
-                                }
-
-                                if (intentos >= 3) {
-                                    escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
-                                    escritor.println("FIN_JUEGO");
                                 }
                                 break;
                             case "3":
