@@ -195,6 +195,50 @@ public class servidor2025 {
             System.out.println("Error al guardar mensaje: " + e.getMessage());
         }
     }
+    public static boolean eliminarMensaje(String usuario, String contenido, boolean esEnviado) {
+        File archivo = new File(ARCHIVO_MENSAJES);
+        List<String> mensajes = new ArrayList<>();
+        boolean encontrado = false;
+
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] datos = linea.split(";");
+                if (datos.length == 3) {
+                    String remitente = datos[0];
+                    String destinatario = datos[1];
+                    String mensaje = datos[2];
+
+                    if (esEnviado && remitente.equals(usuario) && mensaje.equals(contenido)) {
+                        encontrado = true;
+                        continue;
+                    }
+
+                    if (!esEnviado && destinatario.equals(usuario) && mensaje.equals(contenido)) {
+                        encontrado = true;
+                        continue;
+                    }
+
+                    mensajes.add(linea);
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+            for (String m : mensajes) {
+                pw.println(m);
+            }
+        } catch (IOException e) {
+            return false;
+        }
+
+        return encontrado;
+    }
+
+
+
 }
 
 
