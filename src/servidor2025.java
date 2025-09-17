@@ -241,6 +241,29 @@ public class servidor2025 {
         return true;
     }
 
+    public static List<String> obtenerMensajesPorTipo(String usuario, String tipo) {
+        List<String> mensajes = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_MENSAJES))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] datos = linea.split(";");
+                if (datos.length == 3) {
+                    String remitente = datos[0];
+                    String destinatario = datos[1];
+                    String mensaje = datos[2];
+
+                    if ("recibido".equalsIgnoreCase(tipo) && destinatario.equals(usuario)) {
+                        mensajes.add("De " + remitente + ": " + mensaje);
+                    } else if ("enviado".equalsIgnoreCase(tipo) && remitente.equals(usuario)) {
+                        mensajes.add("Para " + destinatario + ": " + mensaje);
+                    }
+                }
+            }
+        } catch (IOException e) {
+        }
+        return mensajes;
+    }
+
 
 
 }
