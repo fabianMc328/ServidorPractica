@@ -195,46 +195,50 @@ public class servidor2025 {
             System.out.println("Error al guardar mensaje: " + e.getMessage());
         }
     }
-    public static boolean eliminarMensaje(String usuario, String contenido, boolean esEnviado) {
+    public static boolean eliminarMensajePorIndice(String usuario, int indice, String tipo) {
         File archivo = new File(ARCHIVO_MENSAJES);
-        List<String> mensajes = new ArrayList<>();
-        boolean encontrado = false;
+        List<String> lineasOriginales = new ArrayList<>();
+        List<String> lineasFiltradas = new ArrayList<>();
 
         try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
             String linea;
             while ((linea = br.readLine()) != null) {
-                String[] datos = linea.split(";");
-                if (datos.length == 3) {
-                    String remitente = datos[0];
-                    String destinatario = datos[1];
-                    String mensaje = datos[2];
-
-                    if (esEnviado && remitente.equals(usuario) && mensaje.equals(contenido)) {
-                        encontrado = true;
-                        continue;
-                    }
-
-                    if (!esEnviado && destinatario.equals(usuario) && mensaje.equals(contenido)) {
-                        encontrado = true;
-                        continue;
-                    }
-
-                    mensajes.add(linea);
-                }
+                lineasOriginales.add(linea);
             }
         } catch (IOException e) {
             return false;
+        }
+
+        int contador = -1;
+        for (String linea : lineasOriginales) {
+            String[] datos = linea.split(";");
+            if (datos.length == 3) {
+                boolean esCandidato = false;
+                if ("recibido".equalsIgnoreCase(tipo) && datos[1].equals(usuario)) {
+                    esCandidato = true;
+                } else if ("enviado".equalsIgnoreCase(tipo) && datos[0].equals(usuario)) {
+                    esCandidato = true;
+                }
+
+                if (esCandidato) {
+                    contador++;
+                    if (contador == indice) { //
+                        continue;
+                    }
+                }
+            }
+            lineasFiltradas.add(linea);
         }
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
-            for (String m : mensajes) {
-                pw.println(m);
+            for (String l : lineasFiltradas) {
+                pw.println(l);
             }
         } catch (IOException e) {
             return false;
         }
 
-        return encontrado;
+        return true;
     }
 
 
