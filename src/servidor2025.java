@@ -99,6 +99,37 @@ public class servidor2025 {
                                 guardarMensaje(usuario, destinatario, mensaje);
                                 escritor.println("Mensaje guardado para " + destinatario);
                                 break;
+                            case "4":
+                                escritor.println("¿Quieres eliminar mensaje recibido o enviado? (recibido/enviado)");
+                                String tipo = lectorSocket.readLine();
+
+                                List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo); // nuevo
+                                if (listaMensajes.isEmpty()) {
+                                    escritor.println("No tienes mensajes " + tipo + " para eliminar.");
+                                    break;
+                                }
+
+
+                                for (int i = 0; i < listaMensajes.size(); i++) {
+                                    escritor.println((i + 1) + ". " + listaMensajes.get(i));
+                                }
+                                escritor.println("FIN_LISTA");
+
+                                escritor.println("Escribe el número del mensaje que deseas eliminar:");
+                                String numStr = lectorSocket.readLine();
+
+                                try {
+                                    int indice = Integer.parseInt(numStr) - 1;
+                                    boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo); // nuevo
+                                    if (eliminado) {
+                                        escritor.println("Mensaje eliminado correctamente.");
+                                    } else {
+                                        escritor.println("No se pudo eliminar el mensaje.");
+                                    }
+                                } catch (Exception e) {
+                                    escritor.println("Número inválido.");
+                                }
+                                break;
 
                             default:
                                 escritor.println("Opción no válida.");
