@@ -103,30 +103,31 @@ public class servidor2025 {
                                 escritor.println("¿Quieres eliminar mensaje recibido o enviado? (recibido/enviado)");
                                 String tipo = lectorSocket.readLine();
 
-                                List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo); // nuevo
+                                List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
                                 if (listaMensajes.isEmpty()) {
                                     escritor.println("No tienes mensajes " + tipo + " para eliminar.");
+                                    escritor.println("FIN_LISTA");
                                     break;
                                 }
 
-
-                                for (int i = 0; i < listaMensajes.size(); i++) {
-                                    escritor.println((i + 1) + ". " + listaMensajes.get(i));
+                                for (String m : listaMensajes) {
+                                    escritor.println(m);
                                 }
                                 escritor.println("FIN_LISTA");
 
                                 escritor.println("Escribe el número del mensaje que deseas eliminar:");
                                 String numStr = lectorSocket.readLine();
 
+                                int indice;
                                 try {
-                                    int indice = Integer.parseInt(numStr) - 1;
-                                    boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo); // nuevo
+                                    indice = Integer.parseInt(numStr) - 1;
+                                    boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo);
                                     if (eliminado) {
                                         escritor.println("Mensaje eliminado correctamente.");
                                     } else {
                                         escritor.println("No se pudo eliminar el mensaje.");
                                     }
-                                } catch (Exception e) {
+                                } catch (NumberFormatException e) {
                                     escritor.println("Número inválido.");
                                 }
                                 break;
@@ -253,7 +254,7 @@ public class servidor2025 {
 
                 if (esCandidato) {
                     contador++;
-                    if (contador == indice) { //
+                    if (contador == indice) {
                         continue;
                     }
                 }
