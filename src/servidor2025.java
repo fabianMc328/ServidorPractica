@@ -32,14 +32,6 @@ public class servidor2025 {
                 String contrasena = lectorSocket.readLine();
                 if (validarLogin(usuario, contrasena)) {
                     escritor.println("✅ Bienvenido, " + usuario + "!");
-                    List<String> mensajesPendientes = obtenerMensajes(usuario);
-                    if (!mensajesPendientes.isEmpty()) {
-                        escritor.println("=== Tienes mensajes recibidos ===");
-                        for (String m : mensajesPendientes) {
-                            escritor.println(m);
-                        }
-                        escritor.println("=== Fin de mensajes ===");
-                    }
 
                     escritor.println("MENU_OPCIONES");
 
@@ -53,31 +45,29 @@ public class servidor2025 {
                                 }
                                 escritor.println("FIN_LISTA");
                                 break;
+
                             case "2":
                                 int numero = (int) (Math.random() * 10) + 1;
                                 int intentos = 0;
                                 escritor.println("Adivina el número del 1 al 10. Tienes 3 intentos.");
+                                boolean juegoTerminado = false;
 
-                                while (intentos < 3) {
+                                while (!juegoTerminado && intentos < 3) {
                                     String intentoStr = lectorSocket.readLine();
                                     try {
                                         int intento = Integer.parseInt(intentoStr);
+                                        intentos++;
                                         if (intento == numero) {
                                             escritor.println("🎉 Adivinaste el número.");
-                                            escritor.println("FIN_JUEGO");
-                                            break;
+                                            juegoTerminado = true;
+                                        } else if (intentos >= 3) {
+                                            escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                                            juegoTerminado = true;
                                         } else {
-                                            intentos++;
-                                            if (intentos >= 3) {
-                                                escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
-                                                escritor.println("FIN_JUEGO");
-                                                break;
+                                            if (intento < numero) {
+                                                escritor.println("El número es mayor.");
                                             } else {
-                                                if (intento < numero) {
-                                                    escritor.println("El número es mayor.");
-                                                } else {
-                                                    escritor.println("El número es menor.");
-                                                }
+                                                escritor.println("El número es menor.");
                                             }
                                         }
                                     } catch (NumberFormatException e) {
@@ -85,12 +75,13 @@ public class servidor2025 {
                                         escritor.println("Ingresa un número válido.");
                                         if (intentos >= 3) {
                                             escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
-                                            escritor.println("FIN_JUEGO");
-                                            break;
+                                            juegoTerminado = true;
                                         }
                                     }
                                 }
+                                escritor.println("FIN_JUEGO");
                                 break;
+
                             case "3":
                                 String destinatario = lectorSocket.readLine();
                                 if (!validarExistencia(destinatario)) {
@@ -102,13 +93,16 @@ public class servidor2025 {
                                 guardarMensaje(usuario, destinatario, mensaje);
                                 escritor.println("Mensaje guardado para " + destinatario);
                                 break;
+
                             case "4":
                                 String tipo = lectorSocket.readLine();
                                 List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
+
                                 if (listaMensajes.isEmpty()) {
                                     escritor.println("NO_HAY_MENSAJES");
                                     break;
                                 }
+
                                 for (String m : listaMensajes) {
                                     escritor.println(m);
                                 }
@@ -127,24 +121,30 @@ public class servidor2025 {
                                     escritor.println("Número inválido.");
                                 }
                                 break;
+
                             case "5":
                                 List<String> mensajesUsuario = obtenerMensajes(usuario);
                                 if (mensajesUsuario.isEmpty()) {
-                                    escritor.println("NO_HAY_MENSAJES"); // indica que no hay mensajes
+                                    escritor.println("NO_HAY_MENSAJES");
                                 } else {
                                     for (String m : mensajesUsuario) {
                                         escritor.println(m);
                                     }
+                                    escritor.println("FIN_LISTA");
                                 }
-                                escritor.println("FIN_LISTA"); // siempre se envía FIN_LISTA al final
                                 break;
+
                             case "6":
                                 escritor.println("Cerrando sesión en el servidor...");
-                                return;
+                                break;
+
                             default:
                                 escritor.println("Opción no válida.");
                         }
+
+                        if ("6".equals(accion)) break;
                     }
+
                 } else {
                     escritor.println("LOGIN_ERROR");
                 }
@@ -158,11 +158,10 @@ public class servidor2025 {
         }
     }
 
-    public static boolean registrarUsuario(String usuario, String contrasena) {
-        if (validarExistencia(usuario)) {
-            return false;
-        }
 
+
+    public static boolean registrarUsuario(String usuario, String contrasena) {
+        if (validarExistencia(usuario)) return false;
         try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_USUARIOS, true))) {
             pw.println(usuario + ";" + contrasena);
             return true;
@@ -176,12 +175,10 @@ public class servidor2025 {
             String linea;
             while ((linea = br.readLine()) != null) {
                 String[] datos = linea.split(";");
-                if (datos.length == 2 && datos[0].equals(usuario) && datos[1].equals(contrasena)) {
+                if (datos.length == 2 && datos[0].equals(usuario) && datos[1].equals(contrasena))
                     return true;
-                }
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return false;
     }
 
@@ -190,12 +187,9 @@ public class servidor2025 {
             String linea;
             while ((linea = br.readLine()) != null) {
                 String[] datos = linea.split(";");
-                if (datos.length == 2 && datos[0].equals(usuario)) {
-                    return true;
-                }
+                if (datos.length == 2 && datos[0].equals(usuario)) return true;
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return false;
     }
 
@@ -205,12 +199,9 @@ public class servidor2025 {
             String linea;
             while ((linea = br.readLine()) != null) {
                 String[] datos = linea.split(";");
-                if (datos.length == 2) {
-                    usuarios.add(datos[0]);
-                }
+                if (datos.length == 2) usuarios.add(datos[0]);
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return usuarios;
     }
 
@@ -220,12 +211,10 @@ public class servidor2025 {
             String linea;
             while ((linea = br.readLine()) != null) {
                 String[] datos = linea.split(";");
-                if (datos.length == 3 && datos[1].equals(usuario)) {
+                if (datos.length == 3 && datos[1].equals(usuario))
                     mensajes.add("De " + datos[0] + ": " + datos[2]);
-                }
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return mensajes;
     }
 
@@ -244,9 +233,7 @@ public class servidor2025 {
 
         try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
             String linea;
-            while ((linea = br.readLine()) != null) {
-                lineasOriginales.add(linea);
-            }
+            while ((linea = br.readLine()) != null) lineasOriginales.add(linea);
         } catch (IOException e) {
             return false;
         }
@@ -256,11 +243,10 @@ public class servidor2025 {
             String[] datos = linea.split(";");
             if (datos.length == 3) {
                 boolean esCandidato = false;
-                if ("recibido".equalsIgnoreCase(tipo) && datos[1].equals(usuario)) {
+                if ("recibido".equalsIgnoreCase(tipo) && datos[1].equals(usuario))
                     esCandidato = true;
-                } else if ("enviado".equalsIgnoreCase(tipo) && datos[0].equals(usuario)) {
+                else if ("enviado".equalsIgnoreCase(tipo) && datos[0].equals(usuario))
                     esCandidato = true;
-                }
 
                 if (esCandidato) {
                     if (contador == indice) {
@@ -274,13 +260,10 @@ public class servidor2025 {
         }
 
         try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
-            for (String l : lineasFiltradas) {
-                pw.println(l);
-            }
+            for (String l : lineasFiltradas) pw.println(l);
         } catch (IOException e) {
             return false;
         }
-
         return true;
     }
 
@@ -312,5 +295,6 @@ public class servidor2025 {
         return mensajes;
     }
 }
+
 
 
