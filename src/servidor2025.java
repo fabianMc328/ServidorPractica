@@ -100,7 +100,7 @@ public class servidor2025 {
                                 escritor.println("Mensaje guardado para " + destinatario);
                                 break;
                             case "4":
-                                escritor.println("¿Quieres eliminar mensaje recibido o enviado? (recibido/enviado)");
+
                                 String tipo = lectorSocket.readLine();
 
                                 List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
@@ -118,9 +118,9 @@ public class servidor2025 {
                                 escritor.println("Escribe el número del mensaje que deseas eliminar:");
                                 String numStr = lectorSocket.readLine();
 
-                                int indice;
+
                                 try {
-                                    indice = Integer.parseInt(numStr) - 1;
+                                    int indice = Integer.parseInt(numStr) ;
                                     boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo);
                                     if (eliminado) {
                                         escritor.println("Mensaje eliminado correctamente.");
@@ -241,7 +241,7 @@ public class servidor2025 {
             return false;
         }
 
-        int contador = -1;
+        int contador = 1;
         for (String linea : lineasOriginales) {
             String[] datos = linea.split(";");
             if (datos.length == 3) {
@@ -253,10 +253,11 @@ public class servidor2025 {
                 }
 
                 if (esCandidato) {
-                    contador++;
                     if (contador == indice) {
+                        contador++;
                         continue;
                     }
+                    contador++;
                 }
             }
             lineasFiltradas.add(linea);
@@ -275,6 +276,8 @@ public class servidor2025 {
 
     public static List<String> obtenerMensajesPorTipo(String usuario, String tipo) {
         List<String> mensajes = new ArrayList<>();
+        int contador = 1;
+
         try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_MENSAJES))) {
             String linea;
             while ((linea = br.readLine()) != null) {
@@ -285,13 +288,16 @@ public class servidor2025 {
                     String mensaje = datos[2];
 
                     if ("recibido".equalsIgnoreCase(tipo) && destinatario.equals(usuario)) {
-                        mensajes.add("De " + remitente + ": " + mensaje);
+                        mensajes.add(contador + ". De " + remitente + ": " + mensaje);
+                        contador++;
                     } else if ("enviado".equalsIgnoreCase(tipo) && remitente.equals(usuario)) {
-                        mensajes.add("Para " + destinatario + ": " + mensaje);
+                        mensajes.add(contador + ". Para " + destinatario + ": " + mensaje);
+                        contador++;
                     }
                 }
             }
         } catch (IOException e) {
+            e.printStackTrace();
         }
         return mensajes;
     }
