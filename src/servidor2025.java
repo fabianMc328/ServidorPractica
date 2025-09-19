@@ -130,14 +130,13 @@ public class servidor2025 {
                             case "5":
                                 List<String> mensajesUsuario = obtenerMensajes(usuario);
                                 if (mensajesUsuario.isEmpty()) {
-                                    escritor.println("NO_HAY_MENSAJES");
-                                    break;
+                                    escritor.println("NO_HAY_MENSAJES"); // indica que no hay mensajes
+                                } else {
+                                    for (String m : mensajesUsuario) {
+                                        escritor.println(m);
+                                    }
                                 }
-                                escritor.println("=== Tus mensajes recibidos ===");
-                                for (String m : mensajesUsuario) {
-                                    escritor.println(m);
-                                }
-                                escritor.println("=== Fin de mensajes ===");
+                                escritor.println("FIN_LISTA"); // siempre se envía FIN_LISTA al final
                                 break;
                             case "6":
                                 escritor.println("Cerrando sesión en el servidor...");
