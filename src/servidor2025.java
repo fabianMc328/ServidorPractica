@@ -131,6 +131,26 @@ public class servidor2025 {
                                     escritor.println("Número inválido.");
                                 }
                                 break;
+                            case "5":
+
+                                List<String> mensajesUsuario = obtenerMensajes(usuario);
+                                if (mensajesUsuario.isEmpty()) {
+                                    escritor.println("No tienes mensajes recibidos.");
+                                } else {
+                                    escritor.println("=== Tus mensajes recibidos ===");
+                                    for (String m : mensajesUsuario) {
+                                        escritor.println(m);
+                                    }
+                                    escritor.println("=== Fin de mensajes ===");
+                                }
+                                break;
+                            case "6":
+
+                                escritor.println("Cerrando sesión en el servidor...");
+                                return; // Se cierra la conexión de este cliente
+
+
+
 
                             default:
                                 escritor.println("Opción no válida.");
