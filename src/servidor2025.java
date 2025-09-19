@@ -92,35 +92,31 @@ public class servidor2025 {
                                 }
                                 break;
                             case "3":
-                                escritor.println("Usuario destinatario:");
                                 String destinatario = lectorSocket.readLine();
-                                escritor.println("Escribe tu mensaje:");
+                                if (!validarExistencia(destinatario)) {
+                                    escritor.println("NO_USUARIO");
+                                    break;
+                                }
+                                escritor.println("OK");
                                 String mensaje = lectorSocket.readLine();
                                 guardarMensaje(usuario, destinatario, mensaje);
                                 escritor.println("Mensaje guardado para " + destinatario);
                                 break;
                             case "4":
-
                                 String tipo = lectorSocket.readLine();
-
                                 List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
                                 if (listaMensajes.isEmpty()) {
-                                    escritor.println("No tienes mensajes " + tipo + " para eliminar.");
-                                    escritor.println("FIN_LISTA");
+                                    escritor.println("NO_HAY_MENSAJES");
                                     break;
                                 }
-
                                 for (String m : listaMensajes) {
                                     escritor.println(m);
                                 }
                                 escritor.println("FIN_LISTA");
 
-                                escritor.println("Escribe el número del mensaje que deseas eliminar:");
                                 String numStr = lectorSocket.readLine();
-
-
                                 try {
-                                    int indice = Integer.parseInt(numStr) ;
+                                    int indice = Integer.parseInt(numStr);
                                     boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo);
                                     if (eliminado) {
                                         escritor.println("Mensaje eliminado correctamente.");
@@ -132,26 +128,20 @@ public class servidor2025 {
                                 }
                                 break;
                             case "5":
-
                                 List<String> mensajesUsuario = obtenerMensajes(usuario);
                                 if (mensajesUsuario.isEmpty()) {
-                                    escritor.println("No tienes mensajes recibidos.");
-                                } else {
-                                    escritor.println("=== Tus mensajes recibidos ===");
-                                    for (String m : mensajesUsuario) {
-                                        escritor.println(m);
-                                    }
-                                    escritor.println("=== Fin de mensajes ===");
+                                    escritor.println("NO_HAY_MENSAJES");
+                                    break;
                                 }
+                                escritor.println("=== Tus mensajes recibidos ===");
+                                for (String m : mensajesUsuario) {
+                                    escritor.println(m);
+                                }
+                                escritor.println("=== Fin de mensajes ===");
                                 break;
                             case "6":
-
                                 escritor.println("Cerrando sesión en el servidor...");
-                                return; // Se cierra la conexión de este cliente
-
-
-
-
+                                return;
                             default:
                                 escritor.println("Opción no válida.");
                         }
@@ -247,6 +237,7 @@ public class servidor2025 {
             System.out.println("Error al guardar mensaje: " + e.getMessage());
         }
     }
+
     public static boolean eliminarMensajePorIndice(String usuario, int indice, String tipo) {
         File archivo = new File(ARCHIVO_MENSAJES);
         List<String> lineasOriginales = new ArrayList<>();
@@ -321,14 +312,6 @@ public class servidor2025 {
         }
         return mensajes;
     }
-
-
-
 }
-
-
-
-
-
 
 
