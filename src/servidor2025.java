@@ -122,17 +122,46 @@ public class servidor2025 {
                                 }
                                 break;
 
+
+
+
                             case "5":
                                 List<String> mensajesUsuario = obtenerMensajes(usuario);
+
                                 if (mensajesUsuario.isEmpty()) {
                                     escritor.println("NO_HAY_MENSAJES");
                                 } else {
-                                    for (String m : mensajesUsuario) {
-                                        escritor.println(m);
+                                    escritor.println("HAY_MENSAJES");
+
+                                    int total = mensajesUsuario.size();
+                                    int pagina = 1;
+                                    int porPagina = 3;
+
+                                    for (int i = 0; i < total; i++) {
+                                        escritor.println(mensajesUsuario.get(i));
+
+                                        if ((i + 1) % porPagina == 0 || i == total - 1) {
+                                            escritor.println("--- Página " + pagina + " ---");
+
+                                            if (i < total - 1) {
+                                                escritor.println("MAS_PAGINAS");
+                                                escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente')");
+                                                String respuesta = lectorSocket.readLine();
+                                                if (!"siguiente".equalsIgnoreCase(respuesta)) {
+                                                    break;
+                                                }
+                                            }
+
+                                            pagina++;
+                                        }
                                     }
+
                                     escritor.println("FIN_LISTA");
                                 }
                                 break;
+
+
+
 
                             case "6":
                                 escritor.println("Cerrando sesión en el servidor...");
