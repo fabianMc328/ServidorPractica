@@ -123,8 +123,6 @@ public class servidor2025 {
                                 break;
 
 
-
-
                             case "5":
                                 List<String> mensajesUsuario = obtenerMensajes(usuario);
 
@@ -176,8 +174,6 @@ public class servidor2025 {
                                 break;
 
 
-
-
                             case "6":
                                 escritor.println("Cerrando sesión en el servidor...");
                                 break;
@@ -203,7 +199,6 @@ public class servidor2025 {
     }
 
 
-
     public static boolean registrarUsuario(String usuario, String contrasena) {
         if (validarExistencia(usuario)) return false;
         try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_USUARIOS, true))) {
@@ -222,7 +217,8 @@ public class servidor2025 {
                 if (datos.length == 2 && datos[0].equals(usuario) && datos[1].equals(contrasena))
                     return true;
             }
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
         return false;
     }
 
@@ -233,7 +229,8 @@ public class servidor2025 {
                 String[] datos = linea.split(";");
                 if (datos.length == 2 && datos[0].equals(usuario)) return true;
             }
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
         return false;
     }
 
@@ -245,7 +242,8 @@ public class servidor2025 {
                 String[] datos = linea.split(";");
                 if (datos.length == 2) usuarios.add(datos[0]);
             }
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
         return usuarios;
     }
 
@@ -258,7 +256,8 @@ public class servidor2025 {
                 if (datos.length == 3 && datos[1].equals(usuario))
                     mensajes.add("De " + datos[0] + ": " + datos[2]);
             }
-        } catch (IOException e) {}
+        } catch (IOException e) {
+        }
         return mensajes;
     }
 
@@ -382,6 +381,7 @@ public class servidor2025 {
             return false;
         }
     }
+
     public static boolean bloquearUsuario(String bloqueador, String bloqueado) {
         if (!validarExistencia(bloqueado) || bloqueador.equals(bloqueado)) return false;
 
@@ -407,8 +407,29 @@ public class servidor2025 {
         }
     }
 
+    public static boolean desbloquearUsuario(String bloqueador, String bloqueado) {
+        File archivo = new File("bloqueados.txt");
+        File tempFile = new File("tempBloqueados.txt");
+        boolean encontrado = false;
 
+        try (BufferedReader reader = new BufferedReader(new FileReader(archivo));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                if (linea.equals(bloqueador + ";" + bloqueado)) {
+                    encontrado = true;
+                    continue;
+                }
+                writer.write(linea + System.lineSeparator());
+            }
+
+        } catch (IOException e) {
+            return false;
+        }
+
+        archivo.delete();
+        tempFile.renameTo(archivo);
+        return encontrado;
+    }
 }
-
-
-
