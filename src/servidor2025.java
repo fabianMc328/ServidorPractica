@@ -71,7 +71,7 @@ public class servidor2025 {
                                             }
                                         }
                                     } catch (NumberFormatException e) {
-                                        intentos++;
+
                                         escritor.println("Ingresa un número válido.");
                                         if (intentos >= 3) {
                                             escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
@@ -145,7 +145,7 @@ public class servidor2025 {
 
                                             if (i < total - 1) {
                                                 escritor.println("MAS_PAGINAS");
-                                                escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente')");
+                                                escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente') o presiona cualquier tecla para cancelar.");
                                                 String respuesta = lectorSocket.readLine();
                                                 if (!"siguiente".equalsIgnoreCase(respuesta)) {
                                                     break;
