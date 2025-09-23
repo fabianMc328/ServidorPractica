@@ -323,6 +323,51 @@ public class servidor2025 {
         }
         return mensajes;
     }
+
+    public static boolean eliminarUsuario(String usuario) {
+        try {
+            // borrar usuario de archivo.txt
+            File inputFile = new File(ARCHIVO_USUARIOS);
+            File tempFile = new File("tempUsuarios.txt");
+            try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
+                 BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.startsWith(usuario + ";")) {
+                        writer.write(line + System.lineSeparator());
+                    }
+                }
+            }
+            inputFile.delete();
+            tempFile.renameTo(inputFile);
+
+            // borrar todos los mensajes
+            File inputMsgs = new File(ARCHIVO_MENSAJES);
+            File tempMsgs = new File("tempMensajes.txt");
+            try (BufferedReader reader = new BufferedReader(new FileReader(inputMsgs));
+                 BufferedWriter writer = new BufferedWriter(new FileWriter(tempMsgs))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(";", 3);
+                    if (parts.length == 3) {
+                        String remitente = parts[0];
+                        String destinatario = parts[1];
+                        if (!remitente.equals(usuario) && !destinatario.equals(usuario)) {
+                            writer.write(line + System.lineSeparator());
+                        }
+                    }
+                }
+            }
+            inputMsgs.delete();
+            tempMsgs.renameTo(inputMsgs);
+
+            return true;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }
 
 
