@@ -382,6 +382,31 @@ public class servidor2025 {
             return false;
         }
     }
+    public static boolean bloquearUsuario(String bloqueador, String bloqueado) {
+        if (!validarExistencia(bloqueado) || bloqueador.equals(bloqueado)) return false;
+
+        File archivo = new File("bloqueados.txt");
+
+
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                if (linea.equals(bloqueador + ";" + bloqueado)) {
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo, true))) {
+            pw.println(bloqueador + ";" + bloqueado);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
 
 }
 
