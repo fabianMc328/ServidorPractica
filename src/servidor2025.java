@@ -159,6 +159,21 @@ public class servidor2025 {
                                     escritor.println("FIN_LISTA");
                                 }
                                 break;
+                            case "7":
+                                String usuarioaEliminar = usuario;
+                                String confirmar = lectorSocket.readLine();
+                                if ("si".equalsIgnoreCase(confirmar)) {
+                                    boolean eliminado = eliminarUsuario(usuarioaEliminar);
+                                    if (eliminado) {
+                                        escritor.println("ELIMINADO_OK");
+                                    } else {
+                                        escritor.println("ELIMINADO_ERROR");
+                                    }
+                                    accion = "6";
+                                } else {
+                                    escritor.println("ELIMINADO_CANCELADO");
+                                }
+                                break;
 
 
 
