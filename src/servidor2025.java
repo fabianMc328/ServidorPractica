@@ -8,6 +8,9 @@ public class servidor2025 {
     private static final String ARCHIVO_USUARIOS = "archivo.txt";
     private static final String ARCHIVO_MENSAJES = "mensajes.txt";
 
+
+    private static final String ARCHIVO_BLOQUEOS = "bloqueados.txt";
+
     public static void main(String[] args) throws IOException {
         ServerSocket socketespecial = new ServerSocket(8080);
 
@@ -88,6 +91,11 @@ public class servidor2025 {
                                     escritor.println("NO_USUARIO");
                                     break;
                                 }
+                                if (estaBloqueado(destinatario, usuario)) {  // <-- nuevo método verifica bloqueo inverso
+                                    escritor.println("USUARIO_BLOQUEADO");
+                                    break;
+                                }
+
                                 escritor.println("OK");
                                 String mensaje = lectorSocket.readLine();
                                 guardarMensaje(usuario, destinatario, mensaje);
@@ -449,5 +457,21 @@ public class servidor2025 {
         archivo.delete();
         tempFile.renameTo(archivo);
         return encontrado;
+    }
+
+    public static boolean estaBloqueado(String usuarioBloqueador, String usuarioBloqueado) {
+        try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_BLOQUEOS))) {
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] datos = linea.split(";");
+                if (datos.length == 2) {
+                    if (datos[0].equals(usuarioBloqueador) && datos[1].equals(usuarioBloqueado)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (IOException e) {
+        }
+        return false;
     }
 }
