@@ -178,6 +178,24 @@ public class servidor2025 {
                                 escritor.println("Cerrando sesión en el servidor...");
                                 break;
 
+                            case "8":
+                                String usuarioABloquear = lectorSocket.readLine();
+                                if (bloquearUsuario(usuario, usuarioABloquear)) {
+                                    escritor.println("Usuario bloqueado correctamente.");
+                                } else {
+                                    escritor.println("Error al bloquear usuario (usuario inexistente o ya bloqueado).");
+                                }
+                                break;
+
+                            case "9":
+                                String usuarioADesbloquear = lectorSocket.readLine();
+                                if (desbloquearUsuario(usuario, usuarioADesbloquear)) {
+                                    escritor.println("Usuario desbloqueado correctamente.");
+                                } else {
+                                    escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
+                                }
+                                break;
+
                             default:
                                 escritor.println("Opción no válida.");
                         }
