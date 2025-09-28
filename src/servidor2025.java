@@ -9,6 +9,9 @@ public class servidor2025 {
     private static final String ARCHIVO_MENSAJES = "mensajes.txt";
     private static final String ARCHIVO_BLOQUEOS = "bloqueados.txt";
 
+
+    private static final List<SolicitudArchivo> solicitudesPendientes = new ArrayList<>();
+
     public static void main(String[] args) throws IOException {
         ServerSocket socketespecial = new ServerSocket(8080);
 
@@ -171,6 +174,10 @@ public class servidor2025 {
                             }
                             break;
 
+                        case "6":
+                            escritor.println("Cerrando sesión en el servidor...");
+                            break;
+
                         case "7":
                             String usuarioaEliminar = usuario;
                             String confirmar = lectorSocket.readLine();
@@ -185,10 +192,6 @@ public class servidor2025 {
                             } else {
                                 escritor.println("ELIMINADO_CANCELADO");
                             }
-                            break;
-
-                        case "6":
-                            escritor.println("Cerrando sesión en el servidor...");
                             break;
 
                         case "8":
@@ -206,6 +209,45 @@ public class servidor2025 {
                                 escritor.println("Usuario desbloqueado correctamente.");
                             } else {
                                 escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
+                            }
+                            break;
+
+                        case "10":
+                            String objetivo = lectorSocket.readLine();
+                            if (!validarExistencia(objetivo)) {
+                                escritor.println("USUARIO_NO_EXISTE");
+                                break;
+                            }
+                            synchronized (solicitudesPendientes) {
+                                solicitudesPendientes.add(new SolicitudArchivo(usuario, objetivo));
+                            }
+                            escritor.println("Solicitud enviada a " + objetivo + ". Esperando respuesta cuando se conecte.");
+                            break;
+
+                        case "11":
+
+                            synchronized (solicitudesPendientes) {
+                                List<SolicitudArchivo> pendientes = new ArrayList<>();
+                                for (SolicitudArchivo s : solicitudesPendientes) {
+                                    if (s.getDestino().equals(usuario)) {
+                                        pendientes.add(s);
+                                    }
+                                }
+                                if (pendientes.isEmpty()) {
+                                    escritor.println("FIN_SOLICITUDES");
+                                } else {
+                                    for (SolicitudArchivo s : pendientes) {
+                                        escritor.println("El usuario '" + s.getOrigen() + "' quiere ver tus archivos. ¿Deseas compartirlos? (si/no)");
+                                        String decision = lectorSocket.readLine();
+                                        if ("si".equalsIgnoreCase(decision)) {
+                                            escritor.println("Archivos compartidos con " + s.getOrigen());
+                                        } else {
+                                            escritor.println("No compartiste los archivos con " + s.getOrigen());
+                                        }
+                                        solicitudesPendientes.remove(s);
+                                    }
+                                    escritor.println("FIN_SOLICITUDES");
+                                }
                             }
                             break;
 
@@ -227,6 +269,8 @@ public class servidor2025 {
 
         cliente.close();
     }
+
+
 
     public static boolean registrarUsuario(String usuario, String contrasena) {
         if (validarExistencia(usuario)) return false;
@@ -474,4 +518,19 @@ public class servidor2025 {
         }
         return false;
     }
+
+
+    static class SolicitudArchivo {
+        private final String origen;
+        private final String destino;
+
+        public SolicitudArchivo(String origen, String destino) {
+            this.origen = origen;
+            this.destino = destino;
+        }
+
+        public String getOrigen() { return origen; }
+        public String getDestino() { return destino; }
+    }
 }
+
