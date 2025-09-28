@@ -9,11 +9,12 @@ public class servidor2025 {
     private static final String ARCHIVO_MENSAJES = "mensajes.txt";
     private static final String ARCHIVO_BLOQUEOS = "bloqueados.txt";
 
-
     private static final List<SolicitudArchivo> solicitudesPendientes = new ArrayList<>();
+    private static final List<ArchivoCompartido> archivosCompartidos = new ArrayList<>();
 
     public static void main(String[] args) throws IOException {
         ServerSocket socketespecial = new ServerSocket(8080);
+        System.out.println("Servidor iniciado en puerto 8080...");
 
         while (true) {
             Socket cliente = socketespecial.accept();
@@ -34,7 +35,7 @@ public class servidor2025 {
 
         String opcion = lectorSocket.readLine();
 
-        if ("1".equals(opcion)) {
+        if ("1".equals(opcion)) { // Registrar usuario
             String usuario = lectorSocket.readLine();
             String contrasena = lectorSocket.readLine();
             if (registrarUsuario(usuario, contrasena)) {
@@ -42,7 +43,7 @@ public class servidor2025 {
             } else {
                 escritor.println("El usuario ya existe.");
             }
-        } else if ("2".equals(opcion)) {
+        } else if ("2".equals(opcion)) { // Login
             String usuario = lectorSocket.readLine();
             String contrasena = lectorSocket.readLine();
             if (validarLogin(usuario, contrasena)) {
@@ -52,15 +53,13 @@ public class servidor2025 {
                 String accion;
                 while ((accion = lectorSocket.readLine()) != null) {
                     switch (accion) {
-                        case "1":
+                        case "1": // Mostrar usuarios registrados
                             List<String> usuarios = obtenerUsuarios();
-                            for (String u : usuarios) {
-                                escritor.println(u);
-                            }
+                            for (String u : usuarios) escritor.println(u);
                             escritor.println("FIN_LISTA");
                             break;
 
-                        case "2":
+                        case "2": // Juego de adivinar número
                             int numero = (int) (Math.random() * 10) + 1;
                             int intentos = 0;
                             escritor.println("Adivina el número del 1 al 10. Tienes 3 intentos.");
@@ -78,11 +77,8 @@ public class servidor2025 {
                                         escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
                                         juegoTerminado = true;
                                     } else {
-                                        if (intento < numero) {
-                                            escritor.println("El número es mayor.");
-                                        } else {
-                                            escritor.println("El número es menor.");
-                                        }
+                                        if (intento < numero) escritor.println("El número es mayor.");
+                                        else escritor.println("El número es menor.");
                                     }
                                 } catch (NumberFormatException e) {
                                     escritor.println("Ingresa un número válido.");
@@ -95,7 +91,7 @@ public class servidor2025 {
                             escritor.println("FIN_JUEGO");
                             break;
 
-                        case "3":
+                        case "3": // Enviar mensaje
                             String destinatario = lectorSocket.readLine();
                             if (!validarExistencia(destinatario)) {
                                 escritor.println("NO_USUARIO");
@@ -111,108 +107,83 @@ public class servidor2025 {
                             escritor.println("Mensaje guardado para " + destinatario);
                             break;
 
-                        case "4":
+                        case "4": // Eliminar mensaje
                             String tipo = lectorSocket.readLine();
                             List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
-
                             if (listaMensajes.isEmpty()) {
                                 escritor.println("NO_HAY_MENSAJES");
                                 break;
                             }
-
-                            for (String m : listaMensajes) {
-                                escritor.println(m);
-                            }
+                            for (String m : listaMensajes) escritor.println(m);
                             escritor.println("FIN_LISTA");
 
                             String numStr = lectorSocket.readLine();
                             try {
                                 int indice = Integer.parseInt(numStr);
                                 boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo);
-                                if (eliminado) {
-                                    escritor.println("Mensaje eliminado correctamente.");
-                                } else {
-                                    escritor.println("No se pudo eliminar el mensaje.");
-                                }
+                                if (eliminado) escritor.println("Mensaje eliminado correctamente.");
+                                else escritor.println("No se pudo eliminar el mensaje.");
                             } catch (NumberFormatException e) {
                                 escritor.println("Número inválido.");
                             }
                             break;
 
-                        case "5":
+                        case "5": // Leer mensajes con paginación
                             List<String> mensajesUsuario = obtenerMensajes(usuario);
-
                             if (mensajesUsuario.isEmpty()) {
                                 escritor.println("NO_HAY_MENSAJES");
-                            } else {
-                                escritor.println("HAY_MENSAJES");
-
-                                int total = mensajesUsuario.size();
-                                int pagina = 1;
-                                int porPagina = 3;
-
-                                for (int i = 0; i < total; i++) {
-                                    escritor.println(mensajesUsuario.get(i));
-
-                                    if ((i + 1) % porPagina == 0 || i == total - 1) {
-                                        escritor.println("--- Página " + pagina + " ---");
-
-                                        if (i < total - 1) {
-                                            escritor.println("MAS_PAGINAS");
-                                            escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente') o presiona cualquier tecla para cancelar.");
-                                            String respuesta = lectorSocket.readLine();
-                                            if (!"siguiente".equalsIgnoreCase(respuesta)) {
-                                                break;
-                                            }
-                                        }
-
-                                        pagina++;
-                                    }
-                                }
-
-                                escritor.println("FIN_LISTA");
+                                break;
                             }
+                            escritor.println("HAY_MENSAJES");
+                            int total = mensajesUsuario.size();
+                            int pagina = 1;
+                            int porPagina = 3;
+                            for (int i = 0; i < total; i++) {
+                                escritor.println(mensajesUsuario.get(i));
+                                if ((i + 1) % porPagina == 0 || i == total - 1) {
+                                    escritor.println("--- Página " + pagina + " ---");
+                                    if (i < total - 1) {
+                                        escritor.println("MAS_PAGINAS");
+                                        escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente') o presiona cualquier tecla para cancelar.");
+                                        String respuesta = lectorSocket.readLine();
+                                        if (!"siguiente".equalsIgnoreCase(respuesta)) break;
+                                    }
+                                    pagina++;
+                                }
+                            }
+                            escritor.println("FIN_LISTA");
                             break;
 
-                        case "6":
+                        case "6": // Salir
                             escritor.println("Cerrando sesión en el servidor...");
-                            break;
+                            return;
 
-                        case "7":
+                        case "7": // Eliminar cuenta
                             String usuarioaEliminar = usuario;
                             String confirmar = lectorSocket.readLine();
                             if ("si".equalsIgnoreCase(confirmar)) {
                                 boolean eliminado = eliminarUsuario(usuarioaEliminar);
-                                if (eliminado) {
-                                    escritor.println("ELIMINADO_OK");
-                                } else {
-                                    escritor.println("ELIMINADO_ERROR");
-                                }
-                                accion = "6";
+                                if (eliminado) escritor.println("ELIMINADO_OK");
+                                else escritor.println("ELIMINADO_ERROR");
+                                return;
                             } else {
                                 escritor.println("ELIMINADO_CANCELADO");
                             }
                             break;
 
-                        case "8":
+                        case "8": // Bloquear usuario
                             String usuarioABloquear = lectorSocket.readLine();
-                            if (bloquearUsuario(usuario, usuarioABloquear)) {
-                                escritor.println("Usuario bloqueado correctamente.");
-                            } else {
-                                escritor.println("Error al bloquear usuario (usuario inexistente o ya bloqueado).");
-                            }
+                            if (bloquearUsuario(usuario, usuarioABloquear)) escritor.println("Usuario bloqueado correctamente.");
+                            else escritor.println("Error al bloquear usuario (usuario inexistente o ya bloqueado).");
                             break;
 
-                        case "9":
+                        case "9": // Desbloquear usuario
                             String usuarioADesbloquear = lectorSocket.readLine();
-                            if (desbloquearUsuario(usuario, usuarioADesbloquear)) {
-                                escritor.println("Usuario desbloqueado correctamente.");
-                            } else {
-                                escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
-                            }
+                            if (desbloquearUsuario(usuario, usuarioADesbloquear)) escritor.println("Usuario desbloqueado correctamente.");
+                            else escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
                             break;
 
-                        case "10":
+                        case "10": // Solicitar ver archivos
                             String objetivo = lectorSocket.readLine();
                             if (!validarExistencia(objetivo)) {
                                 escritor.println("USUARIO_NO_EXISTE");
@@ -224,25 +195,30 @@ public class servidor2025 {
                             escritor.println("Solicitud enviada a " + objetivo + ". Esperando respuesta cuando se conecte.");
                             break;
 
-                        case "11":
-
+                        case "11": // Leer solicitudes de archivos
                             synchronized (solicitudesPendientes) {
                                 List<SolicitudArchivo> pendientes = new ArrayList<>();
                                 for (SolicitudArchivo s : solicitudesPendientes) {
-                                    if (s.getDestino().equals(usuario)) {
-                                        pendientes.add(s);
-                                    }
+                                    if (s.getDestino().equals(usuario)) pendientes.add(s);
                                 }
-                                if (pendientes.isEmpty()) {
-                                    escritor.println("FIN_SOLICITUDES");
-                                } else {
+
+                                if (pendientes.isEmpty()) escritor.println("FIN_SOLICITUDES");
+                                else {
                                     for (SolicitudArchivo s : pendientes) {
-                                        escritor.println("El usuario '" + s.getOrigen() + "' quiere ver tus archivos. ¿Deseas compartirlos? (si/no)");
+                                        escritor.println("SOLICITUD_ARCHIVOS");
+                                        escritor.println(s.getOrigen());
                                         String decision = lectorSocket.readLine();
                                         if ("si".equalsIgnoreCase(decision)) {
-                                            escritor.println("Archivos compartidos con " + s.getOrigen());
+                                            escritor.println("PEDIR_LISTA_ARCHIVOS");
+                                            String lineaArchivo;
+                                            List<String> archivosEnviados = new ArrayList<>();
+                                            while (!(lineaArchivo = lectorSocket.readLine()).equals("FIN_LISTA_ARCHIVOS")) {
+                                                archivosEnviados.add(lineaArchivo);
+                                            }
+                                            archivosCompartidos.add(new ArchivoCompartido(s.getOrigen(), s.getDestino(), archivosEnviados));
+                                            escritor.println("ARCHIVOS_COMPARTIDOS");
                                         } else {
-                                            escritor.println("No compartiste los archivos con " + s.getOrigen());
+                                            escritor.println("NO_COMPARTIDOS");
                                         }
                                         solicitudesPendientes.remove(s);
                                     }
@@ -251,17 +227,33 @@ public class servidor2025 {
                             }
                             break;
 
+                        case "12": // Ver archivos compartidos
+                            boolean tieneArchivos = false;
+                            synchronized (archivosCompartidos) {
+                                for (ArchivoCompartido ac : archivosCompartidos) {
+                                    if (ac.getSolicitante().equals(usuario)) {
+                                        tieneArchivos = true;
+                                        escritor.println("--- Archivos compartidos por " + ac.getDueño() + " ---");
+                                        for (String archivo : ac.getArchivos()) {
+                                            escritor.println(archivo);
+                                        }
+                                    }
+                                }
+                            }
+                            if (!tieneArchivos) escritor.println("NO_HAY_ARCHIVOS");
+                            escritor.println("FIN_LISTA_ARCHIVOS");
+                            break;
+
+
                         default:
                             escritor.println("Opción no válida.");
                     }
-
-                    if ("6".equals(accion)) break;
                 }
 
             } else {
                 escritor.println("LOGIN_ERROR");
             }
-        } else if ("3".equals(opcion)) {
+        } else if ("3".equals(opcion)) { // Salir
             escritor.println("CERRAR");
         } else {
             escritor.println("Opción no válida.");
@@ -270,8 +262,7 @@ public class servidor2025 {
         cliente.close();
     }
 
-
-
+    // -------------------- Métodos auxiliares --------------------
     public static boolean registrarUsuario(String usuario, String contrasena) {
         if (validarExistencia(usuario)) return false;
         try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_USUARIOS, true))) {
@@ -290,8 +281,7 @@ public class servidor2025 {
                 if (datos.length == 2 && datos[0].equals(usuario) && datos[1].equals(contrasena))
                     return true;
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return false;
     }
 
@@ -302,8 +292,7 @@ public class servidor2025 {
                 String[] datos = linea.split(";");
                 if (datos.length == 2 && datos[0].equals(usuario)) return true;
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return false;
     }
 
@@ -315,9 +304,16 @@ public class servidor2025 {
                 String[] datos = linea.split(";");
                 if (datos.length == 2) usuarios.add(datos[0]);
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return usuarios;
+    }
+
+    public static void guardarMensaje(String remitente, String destinatario, String mensaje) {
+        try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_MENSAJES, true))) {
+            pw.println(remitente + ";" + destinatario + ";" + mensaje);
+        } catch (IOException e) {
+            System.out.println("Error al guardar mensaje: " + e.getMessage());
+        }
     }
 
     public static List<String> obtenerMensajes(String usuario) {
@@ -329,64 +325,13 @@ public class servidor2025 {
                 if (datos.length == 3 && datos[1].equals(usuario))
                     mensajes.add("De " + datos[0] + ": " + datos[2]);
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return mensajes;
-    }
-
-    public static void guardarMensaje(String remitente, String destinatario, String mensaje) {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_MENSAJES, true))) {
-            pw.println(remitente + ";" + destinatario + ";" + mensaje);
-        } catch (IOException e) {
-            System.out.println("Error al guardar mensaje: " + e.getMessage());
-        }
-    }
-
-    public static boolean eliminarMensajePorIndice(String usuario, int indice, String tipo) {
-        File archivo = new File(ARCHIVO_MENSAJES);
-        List<String> lineasOriginales = new ArrayList<>();
-        List<String> lineasFiltradas = new ArrayList<>();
-
-        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
-            String linea;
-            while ((linea = br.readLine()) != null) lineasOriginales.add(linea);
-        } catch (IOException e) {
-            return false;
-        }
-
-        int contador = 1;
-        for (String linea : lineasOriginales) {
-            String[] datos = linea.split(";");
-            if (datos.length == 3) {
-                boolean esCandidato = false;
-                if ("recibido".equalsIgnoreCase(tipo) && datos[1].equals(usuario))
-                    esCandidato = true;
-                else if ("enviado".equalsIgnoreCase(tipo) && datos[0].equals(usuario))
-                    esCandidato = true;
-
-                if (esCandidato) {
-                    if (contador == indice) {
-                        contador++;
-                        continue;
-                    }
-                    contador++;
-                }
-            }
-            lineasFiltradas.add(linea);
-        }
-
-        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
-            for (String l : lineasFiltradas) pw.println(l);
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
     }
 
     public static List<String> obtenerMensajesPorTipo(String usuario, String tipo) {
         List<String> mensajes = new ArrayList<>();
         int contador = 1;
-
         try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_MENSAJES))) {
             String linea;
             while ((linea = br.readLine()) != null) {
@@ -395,7 +340,6 @@ public class servidor2025 {
                     String remitente = datos[0];
                     String destinatario = datos[1];
                     String mensaje = datos[2];
-
                     if ("recibido".equalsIgnoreCase(tipo) && destinatario.equals(usuario)) {
                         mensajes.add(contador + ". De " + remitente + ": " + mensaje);
                         contador++;
@@ -405,132 +349,158 @@ public class servidor2025 {
                     }
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        } catch (IOException e) { e.printStackTrace(); }
         return mensajes;
     }
 
-    public static boolean eliminarUsuario(String usuario) {
-        try {
-            File inputFile = new File(ARCHIVO_USUARIOS);
-            File tempFile = new File("tempUsuarios.txt");
-            try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-                 BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    if (!line.startsWith(usuario + ";")) {
-                        writer.write(line + System.lineSeparator());
-                    }
-                }
-            }
-            inputFile.delete();
-            tempFile.renameTo(inputFile);
-
-            File inputMsgs = new File(ARCHIVO_MENSAJES);
-            File tempMsgs = new File("tempMensajes.txt");
-            try (BufferedReader reader = new BufferedReader(new FileReader(inputMsgs));
-                 BufferedWriter writer = new BufferedWriter(new FileWriter(tempMsgs))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] parts = line.split(";", 3);
-                    if (parts.length == 3) {
-                        String remitente = parts[0];
-                        String destinatario = parts[1];
-                        if (!remitente.equals(usuario) && !destinatario.equals(usuario)) {
-                            writer.write(line + System.lineSeparator());
-                        }
-                    }
-                }
-            }
-            inputMsgs.delete();
-            tempMsgs.renameTo(inputMsgs);
-
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public static boolean bloquearUsuario(String bloqueador, String bloqueado) {
-        if (!validarExistencia(bloqueado) || bloqueador.equals(bloqueado)) return false;
-
-        File archivo = new File("bloqueados.txt");
-
+    public static boolean eliminarMensajePorIndice(String usuario, int indice, String tipo) {
+        File archivo = new File(ARCHIVO_MENSAJES);
+        List<String> lineasOriginales = new ArrayList<>();
+        List<String> lineasFiltradas = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
             String linea;
-            while ((linea = br.readLine()) != null) {
-                if (linea.equals(bloqueador + ";" + bloqueado)) {
-                    return false;
+            while ((linea = br.readLine()) != null) lineasOriginales.add(linea);
+        } catch (IOException e) { return false; }
+
+        int contador = 1;
+        for (String linea : lineasOriginales) {
+            String[] datos = linea.split(";");
+            if (datos.length == 3) {
+                boolean esCandidato = false;
+                if ("recibido".equalsIgnoreCase(tipo) && datos[1].equals(usuario)) esCandidato = true;
+                if ("enviado".equalsIgnoreCase(tipo) && datos[0].equals(usuario)) esCandidato = true;
+
+                if (esCandidato) {
+                    if (contador == indice) continue;
+                    contador++;
                 }
             }
-        } catch (IOException e) {
-
+            lineasFiltradas.add(linea);
         }
 
-        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo, true))) {
-            pw.println(bloqueador + ";" + bloqueado);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+            for (String l : lineasFiltradas) pw.println(l);
             return true;
-        } catch (IOException e) {
-            return false;
-        }
+        } catch (IOException e) { return false; }
     }
 
-    public static boolean desbloquearUsuario(String bloqueador, String bloqueado) {
-        File archivo = new File("bloqueados.txt");
-        File tempFile = new File("tempBloqueados.txt");
-        boolean encontrado = false;
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(archivo));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-
+    public static boolean eliminarUsuario(String usuario) {
+        boolean eliminado = false;
+        File archivo = new File(ARCHIVO_USUARIOS);
+        List<String> lineasOriginales = new ArrayList<>();
+        List<String> lineasFiltradas = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
             String linea;
-            while ((linea = reader.readLine()) != null) {
-                if (linea.equals(bloqueador + ";" + bloqueado)) {
-                    encontrado = true;
-                    continue;
-                }
-                writer.write(linea + System.lineSeparator());
-            }
+            while ((linea = br.readLine()) != null) lineasOriginales.add(linea);
+        } catch (IOException e) { return false; }
 
-        } catch (IOException e) {
-            return false;
+        for (String linea : lineasOriginales) {
+            if (!linea.startsWith(usuario + ";")) lineasFiltradas.add(linea);
+            else eliminado = true;
         }
 
-        archivo.delete();
-        tempFile.renameTo(archivo);
-        return encontrado;
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+            for (String l : lineasFiltradas) pw.println(l);
+        } catch (IOException e) { return false; }
+
+        // Eliminar mensajes
+        File archivoMensajes = new File(ARCHIVO_MENSAJES);
+        List<String> mensajes = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoMensajes))) {
+            String linea;
+            while ((linea = br.readLine()) != null) mensajes.add(linea);
+        } catch (IOException e) {}
+        List<String> mensajesFiltrados = new ArrayList<>();
+        for (String m : mensajes) {
+            String[] datos = m.split(";");
+            if (!datos[0].equals(usuario) && !datos[1].equals(usuario)) mensajesFiltrados.add(m);
+        }
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivoMensajes))) {
+            for (String m : mensajesFiltrados) pw.println(m);
+        } catch (IOException e) {}
+
+        // Eliminar bloqueos
+        File archivoBloqueos = new File(ARCHIVO_BLOQUEOS);
+        List<String> bloqueos = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivoBloqueos))) {
+            String linea;
+            while ((linea = br.readLine()) != null) bloqueos.add(linea);
+        } catch (IOException e) {}
+        List<String> bloqueosFiltrados = new ArrayList<>();
+        for (String b : bloqueos) {
+            String[] datos = b.split(";");
+            if (!datos[0].equals(usuario) && !datos[1].equals(usuario)) bloqueosFiltrados.add(b);
+        }
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivoBloqueos))) {
+            for (String b : bloqueosFiltrados) pw.println(b);
+        } catch (IOException e) {}
+
+        return eliminado;
     }
 
-    public static boolean estaBloqueado(String usuarioBloqueador, String usuarioBloqueado) {
+    public static boolean bloquearUsuario(String usuario, String bloquear) {
+        if (!validarExistencia(bloquear)) return false;
+        try (PrintWriter pw = new PrintWriter(new FileWriter(ARCHIVO_BLOQUEOS, true))) {
+            pw.println(usuario + ";" + bloquear);
+            return true;
+        } catch (IOException e) { return false; }
+    }
+
+    public static boolean desbloquearUsuario(String usuario, String desbloquear) {
+        boolean eliminado = false;
+        File archivo = new File(ARCHIVO_BLOQUEOS);
+        List<String> lineas = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
+            String linea;
+            while ((linea = br.readLine()) != null) lineas.add(linea);
+        } catch (IOException e) {}
+
+        List<String> filtradas = new ArrayList<>();
+        for (String l : lineas) {
+            String[] datos = l.split(";");
+            if (datos[0].equals(usuario) && datos[1].equals(desbloquear)) eliminado = true;
+            else filtradas.add(l);
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(archivo))) {
+            for (String l : filtradas) pw.println(l);
+        } catch (IOException e) {}
+
+        return eliminado;
+    }
+
+    public static boolean estaBloqueado(String usuario, String remitente) {
         try (BufferedReader br = new BufferedReader(new FileReader(ARCHIVO_BLOQUEOS))) {
             String linea;
             while ((linea = br.readLine()) != null) {
                 String[] datos = linea.split(";");
-                if (datos.length == 2) {
-                    if (datos[0].equals(usuarioBloqueador) && datos[1].equals(usuarioBloqueado)) {
-                        return true;
-                    }
-                }
+                if (datos[0].equals(usuario) && datos[1].equals(remitente)) return true;
             }
-        } catch (IOException e) {
-        }
+        } catch (IOException e) {}
         return false;
     }
 
-
+    // -------------------- Clases internas --------------------
     static class SolicitudArchivo {
         private final String origen;
         private final String destino;
-
-        public SolicitudArchivo(String origen, String destino) {
-            this.origen = origen;
-            this.destino = destino;
-        }
-
+        public SolicitudArchivo(String origen, String destino) { this.origen = origen; this.destino = destino; }
         public String getOrigen() { return origen; }
         public String getDestino() { return destino; }
+    }
+
+    static class ArchivoCompartido {
+        private final String solicitante;
+        private final String dueño;
+        private final List<String> archivos;
+        public ArchivoCompartido(String solicitante, String dueño, List<String> archivos) {
+            this.solicitante = solicitante;
+            this.dueño = dueño;
+            this.archivos = archivos;
+        }
+        public String getSolicitante() { return solicitante; }
+        public String getDueño() { return dueño; }
+        public List<String> getArchivos() { return archivos; }
     }
 }
 
