@@ -7,8 +7,6 @@ import java.util.List;
 public class servidor2025 {
     private static final String ARCHIVO_USUARIOS = "archivo.txt";
     private static final String ARCHIVO_MENSAJES = "mensajes.txt";
-
-
     private static final String ARCHIVO_BLOQUEOS = "bloqueados.txt";
 
     public static void main(String[] args) throws IOException {
@@ -17,213 +15,218 @@ public class servidor2025 {
         while (true) {
             Socket cliente = socketespecial.accept();
 
-            PrintWriter escritor = new PrintWriter(cliente.getOutputStream(), true);
-            BufferedReader lectorSocket = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
-
-            String opcion = lectorSocket.readLine();
-
-            if ("1".equals(opcion)) {
-                String usuario = lectorSocket.readLine();
-                String contrasena = lectorSocket.readLine();
-                if (registrarUsuario(usuario, contrasena)) {
-                    escritor.println("Usuario registrado con éxito.");
-                } else {
-                    escritor.println("El usuario ya existe.");
+            new Thread(() -> {
+                try {
+                    manejarCliente(cliente);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-            } else if ("2".equals(opcion)) {
-                String usuario = lectorSocket.readLine();
-                String contrasena = lectorSocket.readLine();
-                if (validarLogin(usuario, contrasena)) {
-                    escritor.println("✅ Bienvenido, " + usuario + "!");
-
-                    escritor.println("MENU_OPCIONES");
-
-                    String accion;
-                    while ((accion = lectorSocket.readLine()) != null) {
-                        switch (accion) {
-                            case "1":
-                                List<String> usuarios = obtenerUsuarios();
-                                for (String u : usuarios) {
-                                    escritor.println(u);
-                                }
-                                escritor.println("FIN_LISTA");
-                                break;
-
-                            case "2":
-                                int numero = (int) (Math.random() * 10) + 1;
-                                int intentos = 0;
-                                escritor.println("Adivina el número del 1 al 10. Tienes 3 intentos.");
-                                boolean juegoTerminado = false;
-
-                                while (!juegoTerminado && intentos < 3) {
-                                    String intentoStr = lectorSocket.readLine();
-                                    try {
-                                        int intento = Integer.parseInt(intentoStr);
-                                        intentos++;
-                                        if (intento == numero) {
-                                            escritor.println("🎉 Adivinaste el número.");
-                                            juegoTerminado = true;
-                                        } else if (intentos >= 3) {
-                                            escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
-                                            juegoTerminado = true;
-                                        } else {
-                                            if (intento < numero) {
-                                                escritor.println("El número es mayor.");
-                                            } else {
-                                                escritor.println("El número es menor.");
-                                            }
-                                        }
-                                    } catch (NumberFormatException e) {
-
-                                        escritor.println("Ingresa un número válido.");
-                                        if (intentos >= 3) {
-                                            escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
-                                            juegoTerminado = true;
-                                        }
-                                    }
-                                }
-                                escritor.println("FIN_JUEGO");
-                                break;
-
-                            case "3":
-                                String destinatario = lectorSocket.readLine();
-                                if (!validarExistencia(destinatario)) {
-                                    escritor.println("NO_USUARIO");
-                                    break;
-                                }
-                                if (estaBloqueado(destinatario, usuario)) {  // <-- nuevo método verifica bloqueo inverso
-                                    escritor.println("USUARIO_BLOQUEADO");
-                                    break;
-                                }
-
-                                escritor.println("OK");
-                                String mensaje = lectorSocket.readLine();
-                                guardarMensaje(usuario, destinatario, mensaje);
-                                escritor.println("Mensaje guardado para " + destinatario);
-                                break;
-
-                            case "4":
-                                String tipo = lectorSocket.readLine();
-                                List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
-
-                                if (listaMensajes.isEmpty()) {
-                                    escritor.println("NO_HAY_MENSAJES");
-                                    break;
-                                }
-
-                                for (String m : listaMensajes) {
-                                    escritor.println(m);
-                                }
-                                escritor.println("FIN_LISTA");
-
-                                String numStr = lectorSocket.readLine();
-                                try {
-                                    int indice = Integer.parseInt(numStr);
-                                    boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo);
-                                    if (eliminado) {
-                                        escritor.println("Mensaje eliminado correctamente.");
-                                    } else {
-                                        escritor.println("No se pudo eliminar el mensaje.");
-                                    }
-                                } catch (NumberFormatException e) {
-                                    escritor.println("Número inválido.");
-                                }
-                                break;
-
-
-                            case "5":
-                                List<String> mensajesUsuario = obtenerMensajes(usuario);
-
-                                if (mensajesUsuario.isEmpty()) {
-                                    escritor.println("NO_HAY_MENSAJES");
-                                } else {
-                                    escritor.println("HAY_MENSAJES");
-
-                                    int total = mensajesUsuario.size();
-                                    int pagina = 1;
-                                    int porPagina = 3;
-
-                                    for (int i = 0; i < total; i++) {
-                                        escritor.println(mensajesUsuario.get(i));
-
-                                        if ((i + 1) % porPagina == 0 || i == total - 1) {
-                                            escritor.println("--- Página " + pagina + " ---");
-
-                                            if (i < total - 1) {
-                                                escritor.println("MAS_PAGINAS");
-                                                escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente') o presiona cualquier tecla para cancelar.");
-                                                String respuesta = lectorSocket.readLine();
-                                                if (!"siguiente".equalsIgnoreCase(respuesta)) {
-                                                    break;
-                                                }
-                                            }
-
-                                            pagina++;
-                                        }
-                                    }
-
-                                    escritor.println("FIN_LISTA");
-                                }
-                                break;
-                            case "7":
-                                String usuarioaEliminar = usuario;
-                                String confirmar = lectorSocket.readLine();
-                                if ("si".equalsIgnoreCase(confirmar)) {
-                                    boolean eliminado = eliminarUsuario(usuarioaEliminar);
-                                    if (eliminado) {
-                                        escritor.println("ELIMINADO_OK");
-                                    } else {
-                                        escritor.println("ELIMINADO_ERROR");
-                                    }
-                                    accion = "6";
-                                } else {
-                                    escritor.println("ELIMINADO_CANCELADO");
-                                }
-                                break;
-
-
-                            case "6":
-                                escritor.println("Cerrando sesión en el servidor...");
-                                break;
-
-                            case "8":
-                                String usuarioABloquear = lectorSocket.readLine();
-                                if (bloquearUsuario(usuario, usuarioABloquear)) {
-                                    escritor.println("Usuario bloqueado correctamente.");
-                                } else {
-                                    escritor.println("Error al bloquear usuario (usuario inexistente o ya bloqueado).");
-                                }
-                                break;
-
-                            case "9":
-                                String usuarioADesbloquear = lectorSocket.readLine();
-                                if (desbloquearUsuario(usuario, usuarioADesbloquear)) {
-                                    escritor.println("Usuario desbloqueado correctamente.");
-                                } else {
-                                    escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
-                                }
-                                break;
-
-                            default:
-                                escritor.println("Opción no válida.");
-                        }
-
-                        if ("6".equals(accion)) break;
-                    }
-
-                } else {
-                    escritor.println("LOGIN_ERROR");
-                }
-            } else if ("3".equals(opcion)) {
-                escritor.println("CERRAR");
-            } else {
-                escritor.println("Opción no válida.");
-            }
-
-            cliente.close();
+            }).start();
         }
     }
 
+    private static void manejarCliente(Socket cliente) throws IOException {
+        PrintWriter escritor = new PrintWriter(cliente.getOutputStream(), true);
+        BufferedReader lectorSocket = new BufferedReader(new InputStreamReader(cliente.getInputStream()));
+
+        String opcion = lectorSocket.readLine();
+
+        if ("1".equals(opcion)) {
+            String usuario = lectorSocket.readLine();
+            String contrasena = lectorSocket.readLine();
+            if (registrarUsuario(usuario, contrasena)) {
+                escritor.println("Usuario registrado con éxito.");
+            } else {
+                escritor.println("El usuario ya existe.");
+            }
+        } else if ("2".equals(opcion)) {
+            String usuario = lectorSocket.readLine();
+            String contrasena = lectorSocket.readLine();
+            if (validarLogin(usuario, contrasena)) {
+                escritor.println("✅ Bienvenido, " + usuario + "!");
+                escritor.println("MENU_OPCIONES");
+
+                String accion;
+                while ((accion = lectorSocket.readLine()) != null) {
+                    switch (accion) {
+                        case "1":
+                            List<String> usuarios = obtenerUsuarios();
+                            for (String u : usuarios) {
+                                escritor.println(u);
+                            }
+                            escritor.println("FIN_LISTA");
+                            break;
+
+                        case "2":
+                            int numero = (int) (Math.random() * 10) + 1;
+                            int intentos = 0;
+                            escritor.println("Adivina el número del 1 al 10. Tienes 3 intentos.");
+                            boolean juegoTerminado = false;
+
+                            while (!juegoTerminado && intentos < 3) {
+                                String intentoStr = lectorSocket.readLine();
+                                try {
+                                    int intento = Integer.parseInt(intentoStr);
+                                    intentos++;
+                                    if (intento == numero) {
+                                        escritor.println("🎉 Adivinaste el número.");
+                                        juegoTerminado = true;
+                                    } else if (intentos >= 3) {
+                                        escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                                        juegoTerminado = true;
+                                    } else {
+                                        if (intento < numero) {
+                                            escritor.println("El número es mayor.");
+                                        } else {
+                                            escritor.println("El número es menor.");
+                                        }
+                                    }
+                                } catch (NumberFormatException e) {
+                                    escritor.println("Ingresa un número válido.");
+                                    if (intentos >= 3) {
+                                        escritor.println("😢 Se acabaron los intentos. El número era: " + numero);
+                                        juegoTerminado = true;
+                                    }
+                                }
+                            }
+                            escritor.println("FIN_JUEGO");
+                            break;
+
+                        case "3":
+                            String destinatario = lectorSocket.readLine();
+                            if (!validarExistencia(destinatario)) {
+                                escritor.println("NO_USUARIO");
+                                break;
+                            }
+                            if (estaBloqueado(destinatario, usuario)) {
+                                escritor.println("USUARIO_BLOQUEADO");
+                                break;
+                            }
+                            escritor.println("OK");
+                            String mensaje = lectorSocket.readLine();
+                            guardarMensaje(usuario, destinatario, mensaje);
+                            escritor.println("Mensaje guardado para " + destinatario);
+                            break;
+
+                        case "4":
+                            String tipo = lectorSocket.readLine();
+                            List<String> listaMensajes = obtenerMensajesPorTipo(usuario, tipo);
+
+                            if (listaMensajes.isEmpty()) {
+                                escritor.println("NO_HAY_MENSAJES");
+                                break;
+                            }
+
+                            for (String m : listaMensajes) {
+                                escritor.println(m);
+                            }
+                            escritor.println("FIN_LISTA");
+
+                            String numStr = lectorSocket.readLine();
+                            try {
+                                int indice = Integer.parseInt(numStr);
+                                boolean eliminado = eliminarMensajePorIndice(usuario, indice, tipo);
+                                if (eliminado) {
+                                    escritor.println("Mensaje eliminado correctamente.");
+                                } else {
+                                    escritor.println("No se pudo eliminar el mensaje.");
+                                }
+                            } catch (NumberFormatException e) {
+                                escritor.println("Número inválido.");
+                            }
+                            break;
+
+                        case "5":
+                            List<String> mensajesUsuario = obtenerMensajes(usuario);
+
+                            if (mensajesUsuario.isEmpty()) {
+                                escritor.println("NO_HAY_MENSAJES");
+                            } else {
+                                escritor.println("HAY_MENSAJES");
+
+                                int total = mensajesUsuario.size();
+                                int pagina = 1;
+                                int porPagina = 3;
+
+                                for (int i = 0; i < total; i++) {
+                                    escritor.println(mensajesUsuario.get(i));
+
+                                    if ((i + 1) % porPagina == 0 || i == total - 1) {
+                                        escritor.println("--- Página " + pagina + " ---");
+
+                                        if (i < total - 1) {
+                                            escritor.println("MAS_PAGINAS");
+                                            escritor.println("¿Quieres continuar en la siguiente página? (escribe 'siguiente') o presiona cualquier tecla para cancelar.");
+                                            String respuesta = lectorSocket.readLine();
+                                            if (!"siguiente".equalsIgnoreCase(respuesta)) {
+                                                break;
+                                            }
+                                        }
+
+                                        pagina++;
+                                    }
+                                }
+
+                                escritor.println("FIN_LISTA");
+                            }
+                            break;
+
+                        case "7":
+                            String usuarioaEliminar = usuario;
+                            String confirmar = lectorSocket.readLine();
+                            if ("si".equalsIgnoreCase(confirmar)) {
+                                boolean eliminado = eliminarUsuario(usuarioaEliminar);
+                                if (eliminado) {
+                                    escritor.println("ELIMINADO_OK");
+                                } else {
+                                    escritor.println("ELIMINADO_ERROR");
+                                }
+                                accion = "6";
+                            } else {
+                                escritor.println("ELIMINADO_CANCELADO");
+                            }
+                            break;
+
+                        case "6":
+                            escritor.println("Cerrando sesión en el servidor...");
+                            break;
+
+                        case "8":
+                            String usuarioABloquear = lectorSocket.readLine();
+                            if (bloquearUsuario(usuario, usuarioABloquear)) {
+                                escritor.println("Usuario bloqueado correctamente.");
+                            } else {
+                                escritor.println("Error al bloquear usuario (usuario inexistente o ya bloqueado).");
+                            }
+                            break;
+
+                        case "9":
+                            String usuarioADesbloquear = lectorSocket.readLine();
+                            if (desbloquearUsuario(usuario, usuarioADesbloquear)) {
+                                escritor.println("Usuario desbloqueado correctamente.");
+                            } else {
+                                escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
+                            }
+                            break;
+
+                        default:
+                            escritor.println("Opción no válida.");
+                    }
+
+                    if ("6".equals(accion)) break;
+                }
+
+            } else {
+                escritor.println("LOGIN_ERROR");
+            }
+        } else if ("3".equals(opcion)) {
+            escritor.println("CERRAR");
+        } else {
+            escritor.println("Opción no válida.");
+        }
+
+        cliente.close();
+    }
 
     public static boolean registrarUsuario(String usuario, String contrasena) {
         if (validarExistencia(usuario)) return false;
@@ -366,7 +369,6 @@ public class servidor2025 {
 
     public static boolean eliminarUsuario(String usuario) {
         try {
-            // borrar usuario de archivo.txt
             File inputFile = new File(ARCHIVO_USUARIOS);
             File tempFile = new File("tempUsuarios.txt");
             try (BufferedReader reader = new BufferedReader(new FileReader(inputFile));
@@ -381,7 +383,6 @@ public class servidor2025 {
             inputFile.delete();
             tempFile.renameTo(inputFile);
 
-            // borrar todos los mensajes
             File inputMsgs = new File(ARCHIVO_MENSAJES);
             File tempMsgs = new File("tempMensajes.txt");
             try (BufferedReader reader = new BufferedReader(new FileReader(inputMsgs));
@@ -412,7 +413,6 @@ public class servidor2025 {
         if (!validarExistencia(bloqueado) || bloqueador.equals(bloqueado)) return false;
 
         File archivo = new File("bloqueados.txt");
-
 
         try (BufferedReader br = new BufferedReader(new FileReader(archivo))) {
             String linea;
