@@ -3,6 +3,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class servidor2025 {
     private static final String ARCHIVO_USUARIOS = "archivo.txt";
@@ -11,6 +13,8 @@ public class servidor2025 {
 
     private static final List<SolicitudArchivo> solicitudesPendientes = new ArrayList<>();
     private static final List<ArchivoCompartido> archivosCompartidos = new ArrayList<>();
+    private static final Map<String, String> solicitudesArchivos = new ConcurrentHashMap<>();
+    private static final Map<String, List<String>> archivosCompartidos1 = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
         ServerSocket socketespecial = new ServerSocket(8080);
@@ -183,73 +187,60 @@ public class servidor2025 {
                             else escritor.println("Error al desbloquear usuario (usuario no estaba bloqueado).");
                             break;
 
-                        case "10":
-                            String objetivo = lectorSocket.readLine();
-                            if (!validarExistencia(objetivo)) {
-                                escritor.println("Usuario no registrado.");
-                                break;
-                            }
 
-                            synchronized (solicitudesPendientes) {
-                                solicitudesPendientes.add(new SolicitudArchivo(usuario, objetivo));
+
+                        case "10":
+                            String usuarioObjetivo = lectorSocket.readLine();
+                            if (validarExistencia(usuarioObjetivo)) {
+                                solicitudesArchivos.put(usuarioObjetivo, usuario);
+                                escritor.println("✅ Solicitud enviada a " + usuarioObjetivo + ".");
+                            } else {
+                                escritor.println("❌ Usuario no registrado.");
                             }
-                            escritor.println("Solicitud enviada a " + objetivo + ". Espera respuesta cuando se conecte.");
                             break;
 
                         case "11":
-                            List<SolicitudArchivo> pendientes;
-                            synchronized (solicitudesPendientes) {
-                                pendientes = new ArrayList<>();
-                                for (SolicitudArchivo s : solicitudesPendientes) {
-                                    if (s.getDestino().equals(usuario))
-                                        pendientes.add(s);
-                                }
-                            }
-
-                            if (pendientes.isEmpty()) {
-                                escritor.println("No tienes solicitudes pendientes.");
-                                break;
-                            }
-
-                            for (SolicitudArchivo s : pendientes) {
+                            if (solicitudesArchivos.containsKey(usuario)) {
+                                String solicitante = solicitudesArchivos.get(usuario);
                                 escritor.println("SOLICITUD_ARCHIVOS");
-                                escritor.println(s.getOrigen());
+                                escritor.println(solicitante);
+
                                 String decision = lectorSocket.readLine();
                                 if ("si".equalsIgnoreCase(decision)) {
                                     escritor.println("PEDIR_LISTA_ARCHIVOS");
-                                    List<String> archivosEnviados = new ArrayList<>();
-                                    String lineaArchivo;
-                                    while (!(lineaArchivo = lectorSocket.readLine()).equals("FIN_LISTA_ARCHIVOS")) {
-                                        archivosEnviados.add(lineaArchivo);
+                                    List<String> listaArchivos = new ArrayList<>();
+                                    String nombreArchivo;
+                                    while (!(nombreArchivo = lectorSocket.readLine()).equals("FIN_LISTA_ARCHIVOS")) {
+                                        listaArchivos.add(nombreArchivo);
                                     }
-                                    archivosCompartidos.add(new ArchivoCompartido(s.getOrigen(), s.getDestino(), archivosEnviados));
-                                    escritor.println("ARCHIVOS_COMPARTIDOS");
+
+                                    archivosCompartidos1.put(solicitante, listaArchivos);
+                                    escritor.println("✅ Archivos compartidos correctamente con " + solicitante + ".");
                                 } else {
-                                    escritor.println("NO_COMPARTIDOS");
+                                    escritor.println("❌ Solicitud rechazada.");
                                 }
-                                solicitudesPendientes.remove(s);
+                                solicitudesArchivos.remove(usuario);
+                            } else {
+                                escritor.println("No tienes solicitudes pendientes.");
                             }
                             escritor.println("FIN_SOLICITUDES");
                             break;
 
                         case "12":
-                            boolean tieneArchivos = false;
-                            synchronized (archivosCompartidos) {
-                                for (ArchivoCompartido ac : archivosCompartidos) {
-                                    if (ac.getSolicitante().equals(usuario)) {
-                                        tieneArchivos = true;
-                                        escritor.println("--- Archivos compartidos por " + ac.getDueño() + " ---");
-                                        for (String archivo : ac.getArchivos()) {
-                                            escritor.println(archivo);
-                                        }
-                                    }
+                            if (archivosCompartidos1.containsKey(usuario)) {
+                                List<String> archivos = archivosCompartidos1.get(usuario);
+                                escritor.println("--- Archivos que te compartieron ---");
+                                for (String archivo : archivos) {
+                                    escritor.println(archivo);
                                 }
-                            }
-                            if (!tieneArchivos) {
-                                escritor.println("No tienes archivos compartidos."); // Mensaje interno
+
+                                archivosCompartidos1.remove(usuario);
+                            } else {
+                                escritor.println("No tienes archivos compartidos para ver.");
                             }
                             escritor.println("FIN_LISTA_ARCHIVOS");
                             break;
+
 
 
                         default:
@@ -260,7 +251,7 @@ public class servidor2025 {
             } else {
                 escritor.println("LOGIN_ERROR");
             }
-        } else if ("3".equals(opcion)) { // Salir
+        } else if ("3".equals(opcion)) {
             escritor.println("CERRAR");
         } else {
             escritor.println("Opción no válida.");
