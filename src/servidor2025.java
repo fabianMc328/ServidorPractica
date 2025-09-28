@@ -186,16 +186,17 @@ public class servidor2025 {
                         case "10":
                             String objetivo = lectorSocket.readLine();
                             if (!validarExistencia(objetivo)) {
-                                escritor.println("USUARIO_NO_EXISTE");
+                                escritor.println("Usuario no registrado.");
                                 break;
                             }
+
                             synchronized (solicitudesPendientes) {
                                 solicitudesPendientes.add(new SolicitudArchivo(usuario, objetivo));
                             }
-                            escritor.println("Solicitud enviada a " + objetivo + ". Esperando respuesta cuando se conecte.");
+                            escritor.println("Solicitud enviada a " + objetivo + ". Espera respuesta cuando se conecte.");
                             break;
 
-                        case "11": // Leer solicitudes de archivos
+                        case "11":
                             List<SolicitudArchivo> pendientes;
                             synchronized (solicitudesPendientes) {
                                 pendientes = new ArrayList<>();
@@ -206,31 +207,30 @@ public class servidor2025 {
                             }
 
                             if (pendientes.isEmpty()) {
-                                escritor.println("FIN_SOLICITUDES");
-                            } else {
-                                for (SolicitudArchivo s : pendientes) {
-                                    escritor.println("SOLICITUD_ARCHIVOS");
-                                    escritor.println(s.getOrigen());
-                                    String decision = lectorSocket.readLine();
-                                    if ("si".equalsIgnoreCase(decision)) {
-                                        escritor.println("PEDIR_LISTA_ARCHIVOS");
-                                        List<String> archivosEnviados = new ArrayList<>();
-                                        String lineaArchivo;
-                                        while (!(lineaArchivo = lectorSocket.readLine()).equals("FIN_LISTA_ARCHIVOS")) {
-                                            archivosEnviados.add(lineaArchivo);
-                                        }
-                                        archivosCompartidos.add(new ArchivoCompartido(s.getOrigen(), s.getDestino(), archivosEnviados));
-                                        escritor.println("ARCHIVOS_COMPARTIDOS");
-                                    } else {
-                                        escritor.println("NO_COMPARTIDOS");
-                                    }
-                                    solicitudesPendientes.remove(s);
-                                }
-                                escritor.println("FIN_SOLICITUDES");
+                                escritor.println("No tienes solicitudes pendientes.");
+                                break;
                             }
+
+                            for (SolicitudArchivo s : pendientes) {
+                                escritor.println("SOLICITUD_ARCHIVOS");
+                                escritor.println(s.getOrigen());
+                                String decision = lectorSocket.readLine();
+                                if ("si".equalsIgnoreCase(decision)) {
+                                    escritor.println("PEDIR_LISTA_ARCHIVOS");
+                                    List<String> archivosEnviados = new ArrayList<>();
+                                    String lineaArchivo;
+                                    while (!(lineaArchivo = lectorSocket.readLine()).equals("FIN_LISTA_ARCHIVOS")) {
+                                        archivosEnviados.add(lineaArchivo);
+                                    }
+                                    archivosCompartidos.add(new ArchivoCompartido(s.getOrigen(), s.getDestino(), archivosEnviados));
+                                    escritor.println("ARCHIVOS_COMPARTIDOS");
+                                } else {
+                                    escritor.println("NO_COMPARTIDOS");
+                                }
+                                solicitudesPendientes.remove(s);
+                            }
+                            escritor.println("FIN_SOLICITUDES");
                             break;
-
-
 
                         case "12":
                             boolean tieneArchivos = false;
@@ -245,7 +245,9 @@ public class servidor2025 {
                                     }
                                 }
                             }
-                            if (!tieneArchivos) escritor.println("NO_HAY_ARCHIVOS");
+                            if (!tieneArchivos) {
+                                escritor.println("No tienes archivos compartidos."); // Mensaje interno
+                            }
                             escritor.println("FIN_LISTA_ARCHIVOS");
                             break;
 
