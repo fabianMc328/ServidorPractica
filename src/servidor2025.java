@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,7 +16,7 @@ public class servidor2025 {
     private static final List<ArchivoCompartido> archivosCompartidos = new ArrayList<>();
     private static final Map<String, String> solicitudesArchivos = new ConcurrentHashMap<>();
     private static final Map<String, List<String>> archivosCompartidos1 = new ConcurrentHashMap<>();
-
+    private static final Map<String, Map<String, List<String>>> archivosCompartidosConContenido = new ConcurrentHashMap<>();
     public static void main(String[] args) throws IOException {
         ServerSocket socketespecial = new ServerSocket(8080);
         System.out.println("Servidor iniciado en puerto 8080...");
@@ -207,15 +208,24 @@ public class servidor2025 {
 
                                 String decision = lectorSocket.readLine();
                                 if ("si".equalsIgnoreCase(decision)) {
-                                    escritor.println("PEDIR_LISTA_ARCHIVOS");
-                                    List<String> listaArchivos = new ArrayList<>();
-                                    String nombreArchivo;
-                                    while (!(nombreArchivo = lectorSocket.readLine()).equals("FIN_LISTA_ARCHIVOS")) {
-                                        listaArchivos.add(nombreArchivo);
+                                    escritor.println("PEDIR_LISTA_Y_CONTENIDO");
+
+                                    Map<String, List<String>> archivosRecibidos = new HashMap<>();
+                                    String linea;
+
+
+                                    while (!(linea = lectorSocket.readLine()).equals("_END_ALL_FILES_")) {
+                                        String nombreArchivo = linea;
+                                        List<String> contenido = new ArrayList<>();
+                                        while (!(linea = lectorSocket.readLine()).equals("_ENDFILE_")) {
+                                            contenido.add(linea);
+                                        }
+                                        archivosRecibidos.put(nombreArchivo, contenido);
                                     }
 
-                                    archivosCompartidos1.put(solicitante, listaArchivos);
-                                    escritor.println("✅ Archivos compartidos correctamente con " + solicitante + ".");
+
+                                    archivosCompartidosConContenido.put(solicitante, archivosRecibidos);
+                                    escritor.println("✅ Archivos y su contenido enviados al servidor.");
                                 } else {
                                     escritor.println("❌ Solicitud rechazada.");
                                 }
@@ -227,18 +237,34 @@ public class servidor2025 {
                             break;
 
                         case "12":
-                            if (archivosCompartidos1.containsKey(usuario)) {
-                                List<String> archivos = archivosCompartidos1.get(usuario);
+                            if (archivosCompartidosConContenido.containsKey(usuario)) {
+                                Map<String, List<String>> misArchivos = archivosCompartidosConContenido.get(usuario);
+
+
                                 escritor.println("--- Archivos que te compartieron ---");
-                                for (String archivo : archivos) {
-                                    escritor.println(archivo);
+                                for (String nombreArchivo : misArchivos.keySet()) {
+                                    escritor.println(nombreArchivo);
+                                }
+                                escritor.println("FIN_LISTA_ARCHIVOS");
+                                String decisionCopia = lectorSocket.readLine();
+                                if ("_REQUEST_COPY_".equals(decisionCopia)) {
+                                    String archivoSolicitado = lectorSocket.readLine();
+                                    if (misArchivos.containsKey(archivoSolicitado)) {
+                                        // 3. Enviar el contenido del archivo solicitado
+                                        List<String> contenido = misArchivos.get(archivoSolicitado);
+                                        for (String lineaContenido : contenido) {
+                                            escritor.println(lineaContenido);
+                                        }
+                                    } else {
+                                        escritor.println("Error: El archivo no existe.");
+                                    }
+                                    escritor.println("_ENDFILE_");
                                 }
 
-                                archivosCompartidos1.remove(usuario);
+                                archivosCompartidosConContenido.remove(usuario);
                             } else {
                                 escritor.println("No tienes archivos compartidos para ver.");
                             }
-                            escritor.println("FIN_LISTA_ARCHIVOS");
                             break;
 
 
